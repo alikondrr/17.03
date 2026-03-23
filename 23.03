@@ -6,6 +6,21 @@ using System.Threading.Tasks;
 
 namespace CW5.Variant00
 {
+    public class Program
+    {
+        static void Main(string[] args)
+        {
+            INumber number = new Task1.Number(2.558);
+            INumber number2 = new Task1.Number(-1);
+
+            Console.WriteLine(number.Abs);
+            number.Sum(number2);
+            Console.WriteLine(number.Abs);
+
+        }
+    }
+
+
     public class Task1
     {
 
