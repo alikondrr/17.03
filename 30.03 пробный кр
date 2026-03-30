@@ -1,0 +1,254 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+
+namespace CW5.Variant03
+{
+    public class Task1
+    {
+        public struct Employee : IEmployee
+        {
+            string _name, _surname;
+            int _age, _id;
+            double _salary;
+            static int _idx;
+            public string Name => _name;
+            public string Surname => _surname;
+            public int Age => _age;
+            public double Salary => _salary;
+            public int ID => _id;
+
+            static Employee()
+            {
+                _idx = 100001;
+            }
+            public Employee (string name, string surname, int age, int salary)
+            {
+                _name = name;
+                _surname = surname;
+                _age = age;
+                _salary = salary;
+                _id = _idx;
+                _idx++;
+
+            }
+
+            public void CelebrateBirthday()
+            {
+                _age++;
+            }
+
+            public double GetPerspective()
+            {
+                return Math.Sqrt(100 - Age) * Salary * 1.05;
+            }
+
+            public void Promote(double value)
+            {
+                _salary += value;
+            }
+        }
+    }
+}
+
+
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+
+namespace CW5.Variant03
+{
+    public class Task2
+    {
+        public struct Employee : IEmployee
+        {
+            string _name, _surname;
+            int _age, _id;
+            double _salary;
+            static int _idx;
+            public string Name => _name;
+            public string Surname => _surname;
+            public int Age => _age;
+            public double Salary => _salary;
+            public int ID => _id;
+
+            static Employee()
+            {
+                _idx = 100001;
+            }
+            public Employee(string name, string surname, int age, int salary)
+            {
+                _name = name;
+                _surname = surname;
+                _age = age;
+                _salary = salary;
+                _id = _idx;
+                _idx++;
+
+            }
+
+            public void CelebrateBirthday()
+            {
+                _age++;
+            }
+
+            public double GetPerspective()
+            {
+                return Math.Sqrt(100 - Age) * Salary * 1.05;
+            }
+
+            public void Promote(double value)
+            {
+                _salary += value;
+            }
+        }
+
+        public abstract class Company: ICompany
+        {
+            private string _name;
+            private double _income, _baseCosts; 
+            private IEmployee[] _employees;
+
+            public string Name => _name;
+            public double Income => _income;
+            public double BaseCosts => _baseCosts;
+
+            public IEmployee[] Employees => _employees;
+
+            public double SalaryCosts { get
+                {
+                    double sum = 0;
+                    foreach (var employee in _employees)
+                    {
+                        sum += employee.Salary;
+                    }
+                    return sum;
+                }
+                
+            }
+
+            protected Company (string name, double income, double baseCosts)
+            {
+                _name = name;
+                _income = income;
+                _baseCosts = baseCosts;
+                _employees = new IEmployee[0]; 
+            }
+
+
+
+            public virtual void Fire(IEmployee employee)
+            {
+
+                bool hasEmployee = false;
+                foreach (var emp in _employees)
+                    if (emp == employee)
+                    {
+                        hasEmployee = true;
+                        break;
+                    }
+                if (hasEmployee)
+                {
+                    var newArray = new IEmployee[_employees.Length - 1];
+                    for (int i = 0, j=0; i < _employees.Length; i++)
+                    {
+                        if (_employees[i] != employee)
+                            newArray[j++] = _employees[i];
+                    }
+                    _employees = newArray;
+                }
+            }
+
+            public virtual void Fire(int id)
+            {
+                int ind = -1;
+                for (int i = 0; i < _employees.Length; i++)
+                {
+                    if (_employees[i].ID  == id)
+                    {
+                        ind = 1;
+                        break;
+                    }
+                }
+                if (ind!=-1)
+                {
+                    var newArray = new IEmployee[_employees.Length - 1];
+                    for (int i = 0, j = 0; i < _employees.Length; i++)
+                    {
+                        if (i!=id)
+                            newArray[j++] = _employees[i];
+                    }
+                    _employees = newArray;
+                }
+            }
+
+            public virtual void Hire(IEmployee employee)
+            {
+                foreach (var emp in _employees)
+                    if (emp.ID == employee.ID) return;
+
+                var newArray = new IEmployee[_employees.Length+1];
+                for (int i = 0; i < _employees.Length; i++)
+                {
+                    newArray[i] = _employees[i];
+                }
+                newArray[^1] = employee; //  newArray[newArray.Lenghts-1] = employee
+
+                _employees = newArray;
+            }
+
+            public virtual void Hire(IEmployee[] employees)
+            {
+                foreach (var employee in employees)
+                    Hire(employee);
+            }
+        }
+
+        public class ITCompany : Company, IIT
+        {
+            public ITCompany (string name, double income, double baseCosts) : base (name, income, baseCosts)
+            {
+            }
+            public ITCompany(ICompany other): base(other.Name, other.Income, other.BaseCosts)
+            {
+                if (other is ITCompany)
+                    foreach (var emp in  other.Employees)
+                    base.Hire(emp);
+                else
+                    foreach (var emp in other.Employees)
+                        this.Hire(emp);
+            }
+
+            public override void Hire(IEmployee employee)
+            {
+                if (employee.Age>=18 && employee.Age<=35)
+                    base.Hire(employee);
+            }
+            public void Fire()
+            {
+                int ind = -1;
+                double max = double.MinValue;
+                for (int i = 0; i<Employees.Length; i++)
+                {
+                    if (Employees[i].Age>35)
+                    {
+                        var perspective = Employees[i].GetPerspective();
+                        if (perspective >max)
+                        {
+                            max = perspective;
+                            ind = i;
+                        }
+                    }
+                }
+                if (ind != -1)
+                {
+                    Fire(ind);
+                }
+            }
+        }
+    }
+}
