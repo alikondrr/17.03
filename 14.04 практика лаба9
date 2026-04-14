@@ -1,0 +1,52 @@
+namespace Lab9.Blue
+{
+    public abstract class Blue: Object
+    {
+        protected string _input;
+        public string Input => _input;
+        protected Blue(string input)
+        {
+            _input = input;
+        }
+        public abstract void Review();
+
+        public virtual void ChangeText(string text)
+        {
+            _input = text;
+            Review();
+        }
+    }
+}
+
+
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+
+namespace Lab9.Blue
+{
+    public class Task1 : Blue
+    {
+        private int _output;
+        public int Output => _output;
+        public Task1 (string input) : base (input)
+        {
+            _output = default(int);
+        }
+
+        public override void Review()
+        {
+            int count = 0;
+            count++;
+            _output = count;
+            
+        }
+
+        public override string ToString()
+        {
+            return $"{_input}{Environment.NewLine}{_output}";
+        }
+    }
+}
