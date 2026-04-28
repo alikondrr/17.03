@@ -1,0 +1,80 @@
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+using Newtonsoft.Json;
+
+namespace ConsoleApp1
+{
+    public class Program
+    {
+
+        public class Movie
+        {
+            private string _name;
+            private int[] _stars;
+            public string Name => _name;
+            public int[] Stars => _stars.ToArray();
+
+            public Movie(string name)
+            {
+                _name = name;
+                _stars = new int[0];
+            }
+
+            public void Add(int star) {
+                Array.Resize(ref _stars, _stars.Length + 1);
+                _stars[_stars.Length - 1] = star;
+            }
+
+
+        }
+
+
+
+        static void Main(string[] args)
+        {
+            string folderPath = Environment.GetFolderPath(Environment.SpecialFolder.Desktop);
+            string filePath = Path.Combine(folderPath, "Test", "exemple.txt");
+            Console.WriteLine(folderPath);
+            Console.WriteLine(filePath);
+
+            string foldefPath1 = Path.GetDirectoryName(filePath);
+            if (!Directory.Exists(foldefPath1))
+            {
+                Directory.CreateDirectory(foldefPath1);
+            }
+
+            if (!File.Exists(filePath)) // проверяет наличие файла 
+            {
+                File.Create(filePath).Close(); //обязательно закрыть ; создаем файл
+            }
+
+
+            File.WriteAllText(filePath, "Hello");
+            File.WriteAllText(filePath, "Bye!!!");
+
+            string[] words = new string[] { "just", "tt", "dog" };
+            File.WriteAllLines(filePath, words);
+
+            File.AppendAllText(filePath, "Again hello");
+            File.AppendAllText(filePath, "Again bye");
+            File.AppendAllLines(filePath, words);
+
+            string content1 = File.ReadAllText(filePath);
+            Console.WriteLine(content1);
+            string[] content2 = File.ReadAllLines(filePath);
+            foreach (string line in content2)
+            {
+                Console.WriteLine(line);
+            }
+            File.Create("testrelative.txt").Close();
+
+            File.Delete("testrelative.txt");
+            File.Delete(filePath);
+
+
+        } } }
+    
