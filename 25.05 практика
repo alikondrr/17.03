@@ -1,0 +1,246 @@
+using GameOfLife.Core;
+using System.Text;
+using System.Windows;
+using System.Windows.Controls;
+using System.Windows.Data;
+using System.Windows.Documents;
+using System.Windows.Input;
+using System.Windows.Media;
+using System.Windows.Media.Imaging;
+using System.Windows.Navigation;
+using System.Windows.Shapes;
+using System.Windows.Threading;
+
+namespace GameOfLife.WPF
+{
+    /// <summary>
+    /// Interaction logic for MainWindow.xaml
+    /// </summary>
+    public partial class MainWindow : Window
+    {
+        private Game game;
+        private Border[,] cells;
+        private DispatcherTimer timer;
+        public MainWindow()
+        {
+            InitializeComponent();
+
+            game = new Game();
+            //tbGridSize.Text = $"{game.Rows} x {game.Cols}";
+            cells = new Border[game.Rows, game.Cols];
+
+            CreateGameGrid();
+            UpdateVisual();
+
+            timer = new DispatcherTimer
+            {
+                Interval = TimeSpan.FromMilliseconds(200)
+            };
+            timer.Tick += TimerTick;
+        }
+
+        private void CreateGameGrid()
+        {
+            gameGrid.Children.Clear();
+            gameGrid.Rows = game.Rows;
+            gameGrid.Columns = game.Cols;
+            for (int row = 0; row < game.Rows; row++)
+            {
+                for (int col = 0; col < game.Cols; col++)
+                {
+                    Border border = new Border
+                    {
+                        Background = Brushes.Black,
+                        BorderBrush = Brushes.DimGray,
+                        BorderThickness = new Thickness(0.3)
+                    };
+
+                    int capturedRow = row, capturedCol = col;
+                    border.MouseLeftButtonDown += (sender, e) => CellClick(capturedRow, capturedCol);
+                    cells[row, col] = border;
+                    gameGrid.Children.Add(border);
+                }
+            }
+        }
+
+        private void CellClick(int row, int col)
+        {
+            if (timer.IsEnabled) return;
+
+            game.ToggleCell(row, col);
+            UpdateVisual();
+        }
+        private void UpdateVisual()
+        {
+            for (int row = 0; row < game.Rows; row++)
+            {
+                for (int col = 0; col < game.Cols; col++)
+                {
+                    if (game.Grid[row, col])
+                        cells[row, col].Background = Brushes.Yellow;
+                    else
+                        cells[row, col].Background = Brushes.Black;
+                }
+            }
+        }
+
+        private void TimerTick(object sender, EventArgs e)
+        {
+            game.NextGeneration();
+            tbGen.Text = $"Generation: {game.Generation}";
+            UpdateVisual();
+        }
+        private void StartClick(object sender, RoutedEventArgs e)
+        {
+            int ms;
+            if (!int.TryParse(tbInterval.Text, out ms))
+                ms = 200;
+            if (ms < 30) ms = 30;
+
+            timer.Interval = TimeSpan.FromMilliseconds(ms);
+            timer.Start();
+        }
+
+        private void StopClick(object sender, RoutedEventArgs e)
+        {
+            timer.Stop();
+        }
+
+        private void ResetClick(object sender, RoutedEventArgs e)
+        {
+            timer.Stop();
+            game.Clear();
+            tbGen.Text = $"Generation: {game.Generation}";
+            UpdateVisual();
+        }
+    }
+}
+
+
+
+<Window x:Class="GameOfLife.WPF.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:GameOfLife.WPF"
+        mc:Ignorable="d"
+        Title="Game Of Life" Height="700" Width="900">
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="10">
+            <Button Click="StartClick" Content="Start" Width="110" Height="45" Margin="5"></Button>
+            <Button Click ="StopClick" Content="Stop" Width="110" Height="45" Margin="5"></Button>
+            <Button Click="ResetClick" Content="Reset" Width="110" Height="45" Margin="5"></Button>
+
+            <Separator Width="20" Visibility="Hidden"></Separator>
+            <TextBlock Text="Interval (ms): " VerticalAlignment="Center" Margin="15 0 5 0" ></TextBlock>
+            <TextBox x:Name="tbInterval" Text="200" VerticalContentAlignment="Center" Height="20" Width="50"></TextBox>
+        </StackPanel>
+        <Border Grid.Row="1" BorderBrush="DarkGray" BorderThickness="2" Margin="10" Background="White">
+            <UniformGrid x:Name="gameGrid" Background="AntiqueWhite" Rows="20" Columns="30"></UniformGrid>
+        </Border>
+        <TextBlock x:Name="tbGen" Grid.Row="2" Text="Generation: 1" FontSize="20" FontWeight="DemiBold" Margin="13"/>
+    </Grid>
+</Window>
+
+
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+
+namespace GameOfLife.Core
+{
+    public class Game
+    {
+        public int Rows { get; }
+        public int Cols { get; }
+
+        public int Generation { get; private set; }
+
+        private bool[,] _grid;
+        public bool[,] Grid => (bool[,])_grid.Clone();
+
+        private bool[,] _nextGrid;
+
+        public Game(int rows=20, int cols=30)
+        {
+            Rows = rows; Cols = cols;
+            Generation = 1;
+
+            _grid = new bool[Rows, Cols];
+            _nextGrid = new bool[Rows, Cols];
+        }
+        public void Clear()
+        {
+            Array.Clear(_grid, 0, _grid.Length);
+            Generation = 1;
+
+        }
+
+
+        public void ToggleCell(int row, int col)
+        {
+            if (!IsValideCell(row, col)) return;
+
+            _grid[row, col] = !_grid[row, col];
+        }
+
+        public void NextGeneration()
+        {
+            for (int i = 0; i < Rows; i++)
+            {
+                for (int j = 0; j < Cols; j++)
+                {
+                    int n = CountNeighbors(i,j);
+                    if (_grid[i,j])
+                    {
+                        if (n == 2 || n == 3) _nextGrid[i, j] = true;
+                        else _nextGrid[i,j] = false;
+                    }
+                    else
+                    {
+                        if (n == 3) _nextGrid[i, j] = true;
+                        else _nextGrid[i, j] = false;
+                    }
+                }
+            }
+            Array.Copy(_nextGrid, _grid, _grid.Length);
+            Generation += 1;
+        }
+
+
+        private int CountNeighbors(int row, int col)
+        {
+            int count = 0;
+            for (int i = -1; i<=1; i++)
+            {
+                for (int j = -1; j<=1; j++)
+                {
+                    if (i == 0 && j == 0) continue;
+
+                    int trgRow = row + 1;
+                    int trgCul = col + 1;
+                    if (!IsValideCell(trgRow, trgCul)) continue;
+
+                    if (_grid[trgRow, trgCul]) count++;
+                }
+            }
+            return count;
+        }
+
+        private bool IsValideCell (int row, int col)
+        {
+            if (row< 0 || row >= Rows || col<0 || col >= Cols)
+                return false;
+            return true;
+        }
+    }
+}
